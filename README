@@ -1,5 +1,7 @@
 Para compilar:
 g++ segment.h segment.cpp -o segment `pkg-config --cflags --libs opencv`;
 
+g++ detect.cpp -o detect `pkg-config --cflags --libs opencv`;
+
 Para usar
 ./segment img.jpg
