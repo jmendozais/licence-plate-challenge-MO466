@@ -28,5 +28,6 @@ var/
 
 # OSX dir files
 .DS_Store
-
+train/
+train.zip
 
