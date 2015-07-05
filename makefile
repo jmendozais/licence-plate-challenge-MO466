@@ -1,5 +1,5 @@
 CC:= g++
-CFLAGS:= `pkg-config --cflags opencv`
+CFLAGS:= `pkg-config --cflags opencv` -g
 LDFLAGS:= `pkg-config --libs opencv`
 
 all: mocv_lpr.cpp detect.cpp segment.cpp recognize.cpp lpdetect.cpp
