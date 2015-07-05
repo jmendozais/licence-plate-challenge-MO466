@@ -50,13 +50,13 @@ Mat preprocess(Mat src){
     /// Convert the image to Gray
     cvtColor( src, src_gray, CV_RGB2GRAY );
 
-    imshow("input", src);
-    waitKey();
+    //imshow("input", src);
+
     // Blur
     medianBlur(src_gray, src_gray, 5);
     
-    imshow("blur", src_gray);
-    waitKey();
+    //imshow("blur", src_gray);
+
     // Threshhold
     threshold( src_gray, preproc, threshold_value, max_BINARY_value,threshold_type );
     
@@ -106,10 +106,11 @@ vector<Rect> segment(Mat preproc){
         //if( area > 500 && area < 5000){
         //Get rectangle containing character from image
         Rect rect = boundingRect(Mat(approx));
+
         char str[1234];
         sprintf(str, "contours_%d.jpg", i);
-        imshow(str, preproc);
-        waitKey();
+        //imshow(str, preproc);
+
         //If taller than it is long, save possible character
         if (rect.width < rect.height){
             characters.push_back(rect);

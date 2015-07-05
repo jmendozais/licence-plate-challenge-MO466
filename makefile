@@ -2,7 +2,7 @@ CC:= g++
 CFLAGS:= `pkg-config --cflags opencv`
 LDFLAGS:= `pkg-config --libs opencv`
 
-all: mocv_lpr.cpp detect.cpp segment.cpp recognize.cpp
+all: mocv_lpr.cpp detect.cpp segment.cpp recognize.cpp lpdetect.cpp
 	$(CC) -c mocv_lpr.cpp $(CFLAGS) $(LDFLAGS)
 	$(CC) -c detect.cpp $(CFLAGS) $(LDFLAGS)
 	$(CC) -c segment.cpp $(CFLAGS) $(LDFLAGS)

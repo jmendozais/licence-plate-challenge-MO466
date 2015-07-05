@@ -7,10 +7,11 @@ using namespace cv;
 Plate::Plate(){
 }
 
+/*
 Plate::Plate(Mat img, Rect pos){
     plateImg=img;
     position=pos;
-}
+} */
 
 Plate::Plate(Mat img, RotatedRect rot){
     plateImg=img;
@@ -149,7 +150,7 @@ vector<Plate> DetectRegions::segment(Mat input){
         //Create bounding rect of object
         RotatedRect mr= minAreaRect(Mat(*itc));
         if( !verifySizes(mr)){
-            itc= contours.erase(itc);
+            itc = contours.erase(itc);
         }else{
             ++itc;
             rects.push_back(mr);
@@ -258,7 +259,7 @@ vector<Plate> DetectRegions::run(Mat input){
     
     //Segment image by white 
     vector<Plate> tmp=segment(input);
-    
+   	 
     //return detected and posibles regions
     return tmp;
 }

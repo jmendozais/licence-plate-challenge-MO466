@@ -6,11 +6,11 @@
 #include <iostream>
 #include <stdio.h>
 
-cv::Mat scale(cv::Mat img);
+cv::Mat scale(cv::Mat img, double &scale_factor);
 
-std::vector<cv::Rect> detect(cv::Mat img);
+std::vector<cv::RotatedRect> detect(cv::Mat img);
 
-void write_plates_to_file(cv::Mat img, std::vector<cv::Rect> plates, char name[]);
+void write_plates_to_file(cv::Mat img, std::vector<cv::RotatedRect> plates, char name[]);
 
-void show_detect_result(cv::Mat img, std::vector<cv::Rect> plates);
+void show_detect_result(cv::Mat img, std::vector<cv::RotatedRect> plates);
 

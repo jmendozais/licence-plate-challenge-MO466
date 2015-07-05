@@ -11,7 +11,7 @@
 class Plate{
 public:
     Plate();
-    Plate(cv::Mat img, cv::Rect pos);
+//    Plate(cv::Mat img, cv::Rect pos);
     Plate(cv::Mat img, cv::RotatedRect rot);
     std::string str();
     cv::Rect position;
