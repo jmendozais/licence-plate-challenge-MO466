@@ -24,17 +24,21 @@ int main(int argc, char* argv[]) {
     if (argc < 2) 
         cout << "Usage: ./lpdetect img_path" << endl;
 	
-	cout << "Detecting" << endl;
     img = imread(argv[1], 1),
-
     scaled_img = scale(img, factor_img);
-
-	cout << "factor img " << factor_img << endl;
+	
+	cout << "Detecting" << endl;
     plates = detect(scaled_img);
+
+	// No plates detected
+	if (plates.size() == 0) {
+		cout << "None" << endl;
+		return 0;
+	}
 
     write_plates_to_file(scaled_img, plates, "test_detect");
 
-	// Scale plate to be compatible with segmenting algorithm	
+	// Scale plate to be compatible with segmenting algorithm		
 	roi = scaled_img(plates[0].boundingRect());
 	factor_plate = max(roi.size().width, roi.size().height)/300.0;
  	resize(roi, resized_roi, Size(0, 0), 1/factor_plate, 1/factor_plate, CV_INTER_CUBIC);
