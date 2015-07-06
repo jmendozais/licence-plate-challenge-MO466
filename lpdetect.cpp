@@ -37,7 +37,7 @@ void output(Mat img, Point2f pts[], string str) {
 	}
 
 	for (int i = 0; i < 4; ++ i)
-		cout << pts[(i+offset)%4].x << "," << pts[(i+offset+1)%4].y << ",";
+		cout << pts[(i+offset)%4].x << "," << pts[(i+offset)%4].y << ",";
 	cout << str << endl;
 }
 
@@ -54,7 +54,7 @@ int main(int argc, char* argv[]) {
     img = imread(argv[1], 1),
     scaled_img = scale(img, factor_img);
 	
-	cout << "Detecting" << endl;
+	//cout << "Detecting" << endl;
     plates = detect(scaled_img);
 	right_plates = get_bounding_rects(scaled_img, plates);
 
@@ -71,18 +71,18 @@ int main(int argc, char* argv[]) {
 	factor_plate = max(roi.size().width, roi.size().height)/300.0;
  	resize(roi, resized_roi, Size(0, 0), 1/factor_plate, 1/factor_plate, CV_INTER_CUBIC);
 	
-	cout << "Segmenting" << endl;
+	//cout << "Segmenting" << endl;
     // Preprocess
     Mat preproc = preprocess(resized_roi);
 
-	cout << "Segment preproc..." << endl;
+	//cout << "Segment preproc..." << endl;
     // Segment
     vector<Rect> digits = segment(preproc);
 
     // Write to file
     write_digits_to_file(digits, preproc, "test_segment");
 
-	cout << "Recognizing chars" << endl;
+	// cout << "Recognizing chars" << endl;
 	// Recognize
 	for (int i = 0; i < digits.size(); ++ i) {
 		result += recognize_char(preproc(digits[i]));
@@ -96,11 +96,9 @@ int main(int argc, char* argv[]) {
 		pts[i].y *= factor_img;
 	}
 
-	show_result(img, pts, result);
+	// show_result(img, pts, result);
 
 	output(img, pts, result);
 
     return 0;
 }
-
-
