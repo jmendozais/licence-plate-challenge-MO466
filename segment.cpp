@@ -120,12 +120,23 @@ vector<Rect> segment(Mat preproc){
 
     // Remove smallest rectangles
     sort(characters.begin(), characters.end(), cmp_area);
-    vector<Rect> digits(characters.begin(), characters.begin()+7);
+	vector<Rect> digits;
+	if (characters.size() > 7)
+		digits = vector<Rect>(characters.begin(), characters.begin()+7);
+	else
+		digits = characters;
 
+	int i = 0;
+	for (; i < digits.size(); ++ i)
+		if (digits[i].width * digits[i].height == 0)
+			break;
+
+	vector<Rect> digits2(digits.begin(), digits.begin() + i);
     //sort by x value
-    sort(digits.begin(), digits.end(), cmp_x);
 
-    return digits;
+    sort(digits2.begin(), digits2.end(), cmp_x);
+
+    return digits2;
 }
 
 void show_result(Mat orig, vector<Rect> digits){
@@ -136,6 +147,7 @@ void show_result(Mat orig, vector<Rect> digits){
 
     imshow("Contours", orig);
 }
+
 /*
 int main( int argc, char** argv ){
     // Load an license-plate image
@@ -165,5 +177,4 @@ int main( int argc, char** argv ){
             break;
     }
 }
-
 */

@@ -17,6 +17,29 @@ Mat scale(Mat img, double& factor) {
     return scaled_img;
 }
 
+Rect fix_rect(const Mat &img, Rect rect) {
+	Size size = img.size();
+
+	rect.x = max(0, rect.x);
+    rect.y = max(0, rect.y);
+    rect.width = min(rect.width, size.width - rect.x);
+    rect.height = min(rect.height, size.height - rect.y);
+
+	return rect;
+}
+
+vector<Rect> get_bounding_rects(Mat img, vector<RotatedRect> rot_rects) {
+	vector<Rect> rects;
+	Rect rect;
+
+	for (int i = 0; i < rot_rects.size(); ++ i) {
+		rect = rot_rects[i].boundingRect();
+		rects.push_back(fix_rect(img, rect));
+	}
+
+	return rects;
+}
+
 vector<RotatedRect> extract(Mat img, vector<Rect> plates) {
     double margin = 0.3;
     Point tl, br;
@@ -46,18 +69,21 @@ vector<RotatedRect> extract(Mat img, vector<Rect> plates) {
         // Extract plate(s)
         extractions  = detectRegions.run(plate_region);
         for(int j = 0; j < extractions.size(); ++j) {
-            roi = extractions[j].position;
+
             // Save the first extraction
             if(j == 0 && i == 0) 
                 imwrite("extraction_0_0.jpg", extractions[j].plateImg);
 
-			rot_rect = extractions[i].rotRect;
-			rot_rect.center.x += plates[i].x - margin * plates[i].width;
-			rot_rect.center.y += plates[i].y - margin * plates[i].height;	
+			// Translate to the image coordinates
+			rot_rect = extractions[j].rotRect;
+			rot_rect.center.x = rot_rect.center.x + max(0.0, plates[i].x - margin * plates[i].width);
+			rot_rect.center.y = rot_rect.center.y + max(0.0, plates[i].y - margin * plates[i].height);
             extracted_plates.push_back(rot_rect);
+
             //extracted_plates.push_back(Rect(plates[i].x + roi.x - margin * plates[i].width, plates[i].y + roi.y - margin * plates[i].height, roi.br().x - roi.tl().x, roi.br().y - roi.tl().y));
         }
     }
+
     return extracted_plates;
 }
 
@@ -66,7 +92,7 @@ vector<RotatedRect> detect(Mat img) {
     String plate_cascade_name = "models/besthaar/cascade.xml";
     Mat img_gray;
     vector<Rect> plates;
-    int size;
+	int size;
     
     // Load detector
     if (!plate_cascade.load(plate_cascade_name)) {
@@ -80,8 +106,11 @@ vector<RotatedRect> detect(Mat img) {
     // Detect plates
     plate_cascade.detectMultiScale(img_gray, plates, 1.1, 2, 0|CASCADE_SCALE_IMAGE );
 
+	if (plates.size() == 0)
+		return vector<RotatedRect>();
+
     // Group plates
-    size = plates.size();
+	size = plates.size();
     for (int i = 0; i < size; ++ i)
         plates.push_back(Rect(plates[i]));
 
@@ -92,26 +121,26 @@ vector<RotatedRect> detect(Mat img) {
     return extract(img, plates); 
 }
 
-void write_plates_to_file(Mat img, vector<RotatedRect> plates, char name[]) {
+void write_plates_to_file(Mat img, vector<Rect> plates, char name[]) {
     Mat roi, resized_roi;
 	double factor;	
     char s[1234];
 	
     for (int i = 0; i < plates.size(); i++) {
         sprintf(s, "%s_%d.jpg", name, i);
-        roi = img(plates[i].boundingRect());
+        roi = img(plates[i]);
 		factor = max(roi.size().width, roi.size().height)/300.0;
 		resize(roi, resized_roi, Size(0, 0), 1/factor, 1/factor, CV_INTER_CUBIC);
         imwrite(s, resized_roi);
     }
 }
 
-void show_detect_result(Mat img, vector<RotatedRect> plates) {
+void show_detect_result(Mat img, vector<Rect> plates) {
 	Rect rect;
 	Scalar color;
     for (int i = 0; i < plates.size(); i++) {
         color = Scalar(0, 0, 255);
-		rect = plates[i].boundingRect();
+		rect = plates[i];
         rectangle(img, rect.tl(), rect.br(), color, 2, 8, 0);
     }
     imshow("detect", img);

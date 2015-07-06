@@ -17,6 +17,8 @@ Plate::Plate(Mat img, RotatedRect rot){
     plateImg=img;
 	rotRect=rot;
 	position=rot.boundingRect();
+	position.x = max(position.x, 0);
+	position.y = max(position.y, 0);
 }
 
 string Plate::str(){
@@ -208,7 +210,6 @@ vector<Plate> DetectRegions::segment(Mat input){
                 pointsInterest.push_back(itMask.pos());
         
         RotatedRect minRect = minAreaRect(pointsInterest);
-        
         if(verifySizes(minRect)){
             // rotated rectangle drawing
             Point2f rect_points[4]; minRect.points( rect_points );
@@ -624,7 +625,6 @@ string OCR::run(Plate *input){
         input->chars.push_back(strCharacters[character]);
         input->charsPos.push_back(segments[i].pos);
     }
-	cout << "RESULT: " << result << endl;
     return "-";//input->str();
 }
 
