@@ -20,6 +20,20 @@ recognize: mocv_lpr.cpp recognize.cpp
 	$(CC) -c mocv_lpr.cpp $(CFLAGS) $(LDFLAGS)
 	$(CC) mocv_lpr.o recognize.cpp -o recognize $(CFLAGS) $(LDFLAGS);
 
+ocr: ocr_training.cpp mocv_lpr.cpp recognize.cpp
+	$(CC) -c mocv_lpr.cpp $(CFLAGS) $(LDFLAGS)
+	$(CC) -c recognize.cpp $(CFLAGS) $(LDFLAGS)
+	$(CC) mocv_lpr.o recognize.o ocr_training.cpp -o ocr_training $(CFLAGS) $(LDFLAGS);
+
+pack: mocv_lpr.cpp detect.cpp segment.cpp recognize.cpp lpdetect.cpp ocr_training.cpp
+	rm -rf bin
+	mkdir bin
+	cp *.cpp bin/
+	cp *.h bin/
+	cp -rf model bin/
+	cp ocr.xml bin/
+	cp makefile bin/
+
 clean:
 	rm -f *.o
 	rm -f *.jpg

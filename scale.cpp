@@ -27,8 +27,8 @@ int main(int argc, char* argv[]) {
   string out_list = argv[2];
   int major_side = atoi(argv[3]);
   bool isPositive = atoi(argv[4]) != 0;
-  ifstream fin(img_list);
-  ofstream fout(out_list);
+  ifstream fin(img_list.c_str());
+  ofstream fout(out_list.c_str());
 
   string line, path;
   vector<int> pts(8);

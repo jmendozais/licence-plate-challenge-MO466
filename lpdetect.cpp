@@ -48,6 +48,7 @@ int main(int argc, char* argv[]) {
 	Point2f pts[4];
 	double factor_img, factor_plate;
 	string result;
+
     if (argc < 2) 
         cout << "Usage: ./lpdetect img_path" << endl;
 	
@@ -64,7 +65,7 @@ int main(int argc, char* argv[]) {
 		return 0;
 	}
 
-    write_plates_to_file(scaled_img, right_plates, "test_detect");
+    //write_plates_to_file(scaled_img, right_plates, "test_detect");
 
 	// Scale plate to be compatible with segmenting algorithm		
 	roi = scaled_img(right_plates[0]);
@@ -80,12 +81,21 @@ int main(int argc, char* argv[]) {
     vector<Rect> digits = segment(preproc);
 
     // Write to file
-    write_digits_to_file(digits, preproc, "test_segment");
+    //write_digits_to_file(digits, preproc, "test_segment");
 
-	// cout << "Recognizing chars" << endl;
+	//cout << "Recognizing chars" << endl;
 	// Recognize
+
+	int k;
+	KNearest knn = read_knn("ocr.xml", k);
+	Mat character, feats;
 	for (int i = 0; i < digits.size(); ++ i) {
-		result += recognize_char(preproc(digits[i]));
+		// digits with side < 2 cause segfault
+		if (digits[i].width < 2 || digits[i].height < 2 )
+			continue;
+		character = preproc(digits[i]);
+		feats = features(normalize(character));
+		result += (char)knn.find_nearest(feats, k);
 	}
 
 	plates[0].points(pts);
@@ -95,8 +105,10 @@ int main(int argc, char* argv[]) {
 		pts[i].x *= factor_img;
 		pts[i].y *= factor_img;
 	}
+	if (result.size() == 0)
+		result = "UNKNOWN";
 
-	// show_result(img, pts, result);
+	//show_result(img, pts, result);
 
 	output(img, pts, result);
 

@@ -89,7 +89,7 @@ vector<RotatedRect> extract(Mat img, vector<Rect> plates) {
 
 vector<RotatedRect> detect(Mat img) {
     CascadeClassifier plate_cascade;
-    String plate_cascade_name = "models/besthaar/cascade.xml";
+    String plate_cascade_name = "model/cascade.xml";
     Mat img_gray;
     vector<Rect> plates;
 	int size;
