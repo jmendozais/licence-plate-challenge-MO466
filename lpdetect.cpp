@@ -47,16 +47,20 @@ int main(int argc, char* argv[]) {
 	vector<Rect> right_plates;
 	Point2f pts[4];
 	double factor_img, factor_plate;
-	string result;
+	string result, model_path;
 
     if (argc < 2) 
-        cout << "Usage: ./lpdetect img_path" << endl;
-	
+        cout << "Usage: ./lpdetect img_path [model_path]" << endl;
+	if (argc > 2)
+		model_path = argv[2];
+	else 
+		model_path = "model/cascade.xml";
+
     img = imread(argv[1], 1),
     scaled_img = scale(img, factor_img);
 	
 	//cout << "Detecting" << endl;
-    plates = detect(scaled_img);
+    plates = detect(scaled_img, model_path);
 	right_plates = get_bounding_rects(scaled_img, plates);
 
 	// No plates detected
@@ -69,7 +73,7 @@ int main(int argc, char* argv[]) {
 
 	// Scale plate to be compatible with segmenting algorithm		
 	roi = scaled_img(right_plates[0]);
-	factor_plate = max(roi.size().width, roi.size().height)/300.0;
+	factor_plate = max(roi.size().width, roi.size().height)/500.0;
  	resize(roi, resized_roi, Size(0, 0), 1/factor_plate, 1/factor_plate, CV_INTER_CUBIC);
 	
 	//cout << "Segmenting" << endl;
@@ -79,6 +83,8 @@ int main(int argc, char* argv[]) {
 	//cout << "Segment preproc..." << endl;
     // Segment
     vector<Rect> digits = segment(preproc);
+	//show_result(resized_roi, digits);
+	//waitKey();
 
     // Write to file
     //write_digits_to_file(digits, preproc, "test_segment");
@@ -90,8 +96,8 @@ int main(int argc, char* argv[]) {
 	KNearest knn = read_knn("ocr.xml", k);
 	Mat character, feats;
 	for (int i = 0; i < digits.size(); ++ i) {
-		// digits with side < 2 cause segfault
-		if (digits[i].width < 2 || digits[i].height < 2 )
+		// digits with side < 4 cause segfault
+		if (digits[i].width < 4 || digits[i].height < 4 )
 			continue;
 		character = preproc(digits[i]);
 		feats = features(normalize(character));

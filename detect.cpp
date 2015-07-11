@@ -87,15 +87,14 @@ vector<RotatedRect> extract(Mat img, vector<Rect> plates) {
     return extracted_plates;
 }
 
-vector<RotatedRect> detect(Mat img) {
+vector<RotatedRect> detect(Mat img, String model_name) {
     CascadeClassifier plate_cascade;
-    String plate_cascade_name = "model/cascade.xml";
     Mat img_gray;
     vector<Rect> plates;
 	int size;
     
     // Load detector
-    if (!plate_cascade.load(plate_cascade_name)) {
+    if (!plate_cascade.load(model_name)) {
         cout << "error loading model" << endl;
     }
 
@@ -105,6 +104,7 @@ vector<RotatedRect> detect(Mat img) {
 
     // Detect plates
     plate_cascade.detectMultiScale(img_gray, plates, 1.1, 2, 0|CASCADE_SCALE_IMAGE );
+	cerr << "# plates detected: " << plates.size() << endl;
 
 	if (plates.size() == 0)
 		return vector<RotatedRect>();

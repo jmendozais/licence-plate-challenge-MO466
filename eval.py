@@ -2,6 +2,7 @@ from shapely.geometry import Point, Polygon
 import os
 import numpy as np
 import cv2
+import sys
 
 def parse(line):
 	tok = line.split(',')
@@ -12,7 +13,12 @@ def parse(line):
 	roi1 = Polygon(pts)
 	return roi1, tok[8]
 
-data_path = 'train'
+if len(sys.argv) < 3:
+	print "Usage ./eval model opt"
+	print "opt : {model, data}"
+	sys.exit()
+
+
 pos_val = 'val_pos.txt'
 neg_val = 'val_bg.txt'
 
@@ -32,7 +38,7 @@ for line in f:
 	print "Annotation: {}".format(lines[0])
 	roi1, str1 = parse(lines[0])
 
-	out = os.popen('./bin/lpdetect {} > {}'.format(img_path, tmp_path)).read()
+	out = os.popen('./lpdetect {} > {}'.format(img_path, tmp_path)).read()
 	
 	pred_f = open(tmp_path)
 	lines = [line for line in pred_f]

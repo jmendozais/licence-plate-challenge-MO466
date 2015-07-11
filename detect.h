@@ -8,7 +8,7 @@
 
 cv::Mat scale(cv::Mat img, double &scale_factor);
 
-std::vector<cv::RotatedRect> detect(cv::Mat img);
+std::vector<cv::RotatedRect> detect(cv::Mat img, std::string model_name);
 
 void write_plates_to_file(cv::Mat img, std::vector<cv::Rect> plates, char name[]);
 

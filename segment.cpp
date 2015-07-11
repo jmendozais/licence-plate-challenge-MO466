@@ -85,7 +85,6 @@ Mat preprocess(Mat src){
     dilate(preproc, preproc, SE_element);//, Point(-1,-1), 1, 1, 1);
 
     //preproc = 255 - preproc;
-
     return preproc;
 }
 
@@ -97,14 +96,17 @@ vector<Rect> segment(Mat preproc){
     vector<Vec4i> hierarchy;
     vector<Rect> characters;
     Mat dst = 255-preproc;
+
     findContours(dst, contours, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE,Point(0, 0));
 
     /// Find the rectangles for bigger contours
     for( int i = 0; i < contours.size(); i++ ){
+
         approxPolyDP(Mat(contours[i]), approx, arcLength(Mat(contours[i]), true)*0.02, true);
         double area = fabs(contourArea(Mat(approx)));
         //if( area > 500 && area < 5000){
         //Get rectangle containing character from image
+
         Rect rect = boundingRect(Mat(approx));
 
         char str[1234];
@@ -140,7 +142,9 @@ vector<Rect> segment(Mat preproc){
 }
 
 void show_result(Mat orig, vector<Rect> digits){
-    for( int i = 0; i < 7; i++ ){
+	int num_digits = min(7, (int)digits.size());
+	
+    for( int i = 0; i < num_digits; i++ ){
         Scalar color = Scalar(0, 255, 0);
         rectangle(orig, digits[i].tl(), digits[i].br(), color, 2, 8, 0);
     }
