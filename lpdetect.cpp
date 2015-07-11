@@ -54,7 +54,7 @@ int main(int argc, char* argv[]) {
 	if (argc > 2)
 		model_path = argv[2];
 	else 
-		model_path = "model/cascade.xml";
+		model_path = "models/latest/cascade.xml";
 
     img = imread(argv[1], 1),
     scaled_img = scale(img, factor_img);

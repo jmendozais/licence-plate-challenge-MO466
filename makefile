@@ -30,7 +30,8 @@ pack: mocv_lpr.cpp detect.cpp segment.cpp recognize.cpp lpdetect.cpp ocr_trainin
 	mkdir bin
 	cp *.cpp bin/
 	cp *.h bin/
-	cp -rf model bin/
+	mkdir bin/models
+	cp -rf models/latest bin/models
 	cp ocr.xml bin/
 	cp makefile bin/
 

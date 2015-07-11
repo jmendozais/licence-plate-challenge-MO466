@@ -1,5 +1,6 @@
 from shapely.geometry import Point, Polygon
 import os
+import os.path as path
 import numpy as np
 import cv2
 import sys
@@ -13,21 +14,24 @@ def parse(line):
 	roi1 = Polygon(pts)
 	return roi1, tok[8]
 
-if len(sys.argv) < 3:
-	print "Usage ./eval model opt"
-	print "opt : {model, data}"
-	sys.exit()
+def input():
+	if len(sys.argv) < 4:
+		print "Usage ./eval model data_dir opt"
+		print "opt : {model, data}"
+		sys.exit()
+	return sys.argv[1], sys.argv[2], sys.argv[3]
 
-
-pos_val = 'val_pos.txt'
-neg_val = 'val_bg.txt'
+model, data_dir, opt = input()
+pos_val = '{}_val_pos.txt'.format(data_dir)
+neg_val = '{}_val_bg.txt'.format(data_dir)
+data_parent = data_dir[:data_dir.rfind('/')]
 
 f = open(pos_val)
 
 lc = []
 rc = []
 for line in f:
-	img_path = line.split(' ')[0];
+	img_path = path.join(data_parent, line.split(' ')[0]);
 	ann_path = img_path.split('.')[0] + ".txt";
 	tmp_path = 'tmp.txt'
 	print img_path

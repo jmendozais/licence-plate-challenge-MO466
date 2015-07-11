@@ -26,7 +26,7 @@ def load(data_dir):
 
     Returns:
         X: Images
-        Y1: nx8x2 array with the coordinates of the license plate
+        Y1: nx4x2 array with the coordinates of the license plate
         Y2: License plate string
 
     '''
