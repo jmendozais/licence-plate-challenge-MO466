@@ -21,28 +21,37 @@ def input():
 		sys.exit()
 	return sys.argv[1], sys.argv[2], sys.argv[3]
 
-model, data_dir, opt = input()
+model_path, data_dir, opt = input()
+model_home = model_path[:model_path.rfind("/")]
 pos_val = '{}_val_pos.txt'.format(data_dir)
 neg_val = '{}_val_bg.txt'.format(data_dir)
-data_parent = data_dir[:data_dir.rfind('/')]
 
-f = open(pos_val)
+none_path = path.join(model_home, 'none')
+good_path = path.join(model_home, 'good')
+mid_path = path.join(model_home, 'mid')
+bad_path = path.join(model_home, 'bad')
+
+os.popen("rm -rf {0}; mkdir {0}".format(none_path))
+os.popen("rm -rf {0}; mkdir {0}".format(good_path))
+os.popen("rm -rf {0}; mkdir {0}".format(mid_path))
+os.popen("rm -rf {0}; mkdir {0}".format(bad_path))
 
 lc = []
 rc = []
+f = open(pos_val)
 for line in f:
-	img_path = path.join(data_parent, line.split(' ')[0]);
+	img_path = path.join(data_dir, line.split(' ')[0]);
 	ann_path = img_path.split('.')[0] + ".txt";
 	tmp_path = 'tmp.txt'
 	print img_path
 
 	annotation_f = open(ann_path);
 	lines = [line for line in annotation_f]
-	assert (len(lines) > 0)
+	assert len(lines) > 0
 	print "Annotation: {}".format(lines[0])
 	roi1, str1 = parse(lines[0])
 
-	out = os.popen('./lpdetect {} > {}'.format(img_path, tmp_path)).read()
+	out = os.popen('./lpdetect {} {} > {}'.format(img_path, model_path, tmp_path)).read()
 	
 	pred_f = open(tmp_path)
 	lines = [line for line in pred_f]
@@ -52,7 +61,8 @@ for line in f:
 	if lines[0].find('None') != -1:
 		lc.append(0.0)				
 		rc.append(0.0)
-		os.popen('cp {} fails/{}'.format(img_path, img_path));
+		os.popen('cp {} {}/'.format(img_path, none_path));
+		os.popen('cp {} {}/'.format(ann_path, none_path));
 		continue
 
 	roi2, str2 = parse(lines[0])
@@ -82,10 +92,16 @@ for line in f:
 
 	if overlap >= 0.7:
 		lc.append(1.0)
+		os.popen('cp {} {}/'.format(img_path, good_path));
+		os.popen('cp {} {}/'.format(ann_path, good_path));
 	elif overlap >= 0.5:
 		lc.append(0.5)
+		os.popen('cp {} {}/'.format(img_path, mid_path));
+		os.popen('cp {} {}/'.format(ann_path, mid_path));
 	else:
 		lc.append(0.0)	
+		os.popen('cp {} {}/'.format(img_path, bad_path));
+		os.popen('cp {} {}/'.format(ann_path, bad_path));
 	
 	if str1.strip() == str2.strip():
 		rc.append(1.0)

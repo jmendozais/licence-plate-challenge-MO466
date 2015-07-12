@@ -26,14 +26,14 @@ ocr: ocr_training.cpp mocv_lpr.cpp recognize.cpp
 	$(CC) mocv_lpr.o recognize.o ocr_training.cpp -o ocr_training $(CFLAGS) $(LDFLAGS);
 
 pack: mocv_lpr.cpp detect.cpp segment.cpp recognize.cpp lpdetect.cpp ocr_training.cpp
-	rm -rf bin
-	mkdir bin
-	cp *.cpp bin/
-	cp *.h bin/
-	mkdir bin/models
-	cp -rf models/latest bin/models
-	cp ocr.xml bin/
-	cp makefile bin/
+	rm -rf lpr
+	mkdir lpr
+	cp *.cpp lpr/
+	cp *.h lpr/
+	mkdir lpr/models
+	cp -rf models/latest lpr/models
+	cp ocr.xml lpr/
+	cp makefile lpr/
 
 clean:
 	rm -f *.o
