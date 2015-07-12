@@ -58,7 +58,8 @@ Mat preprocess(Mat src){
     //imshow("blur", src_gray);
 
     // Threshhold
-    threshold( src_gray, preproc, threshold_value, max_BINARY_value,threshold_type );
+    //threshold( src_gray, preproc, threshold_value, max_BINARY_value,threshold_type );
+    adaptiveThreshold( src_gray, preproc, 255, ADAPTIVE_THRESH_GAUSSIAN_C, THRESH_BINARY, 91, 0);
     
     //imshow("Binary", preproc);
     
@@ -86,6 +87,21 @@ Mat preprocess(Mat src){
 
     //preproc = 255 - preproc;
     return preproc;
+}
+
+bool _too_white(Rect r, Mat img){
+    Point p = r.tl();
+    int w = 0, b = 0;
+    for(int i = p.y; i < p.y+r.height; ++i){
+        for(int j = p.x; j < p.x+r.width; ++j){
+            Vec3b pxl = img.at<Vec3b>(j, i);
+            if(pxl[1] == 255) ++w;
+            else ++b;
+
+        }
+    }
+    if((double)b/(double)w < 0.3) return 1;
+    return 0;
 }
 
 vector<Rect> segment(Mat preproc){
@@ -120,25 +136,46 @@ vector<Rect> segment(Mat preproc){
         //}
     }
 
-    // Remove smallest rectangles
+    // Remove smallest rectangles and those with wrong height
     sort(characters.begin(), characters.end(), cmp_area);
-	vector<Rect> digits;
-	if (characters.size() > 7)
-		digits = vector<Rect>(characters.begin(), characters.begin()+7);
-	else
-		digits = characters;
 
-	int i = 0;
-	for (; i < digits.size(); ++ i)
-		if (digits[i].width * digits[i].height == 0)
-			break;
+    // If the difference to one's height compared to the 7 first is too much, discard
+    double minh = 1234567;
+    int idx, idx2;
+    for(int i = 0; i < 7; ++i){
+        if(characters[i].height < minh){
+            minh = characters[i].height;
+            idx = i;
+        }
+        else idx2 = i;
+    }
+    double sum = 0, avg_diff;
+    for(int i = 1; i < 7; ++i){
+        if(i==idx || i-1==idx) continue;
+        sum += abs(characters[i].height - characters[i-1].height);
+    }
+    avg_diff = sum/4;
+    if(abs(characters[idx2].height-characters[idx].height) > characters[idx2].height/4)
+        characters.erase(characters.begin() + idx);
 
-	vector<Rect> digits2(digits.begin(), digits.begin() + i);
-    //sort by x value
+    // Remove rectangles whose interior is almost all white
+    /*for(int i = 0; i < 7; ++i){
+        if(_too_white(characters[i], preproc)){
+            characters.erase(characters.begin() + i);
+            i--;
+        }
+        }*/
 
-    sort(digits2.begin(), digits2.end(), cmp_x);
+    // Remove rectangles that contain others
+    
 
-    return digits2;
+    vector<Rect> digits;
+    if(characters.size() >=7)
+        digits = vector<Rect>(characters.begin(), characters.begin()+7);
+    else digits = characters;
+    sort(digits.begin(), digits.end(), cmp_x);
+
+    return digits;
 }
 
 void show_result(Mat orig, vector<Rect> digits){
@@ -152,7 +189,7 @@ void show_result(Mat orig, vector<Rect> digits){
     imshow("Contours", orig);
 }
 
-/*
+
 int main( int argc, char** argv ){
     // Load an license-plate image
     Mat orig = imread( argv[1], 1 );
@@ -181,4 +218,4 @@ int main( int argc, char** argv ){
             break;
     }
 }
-*/
+
