@@ -16,13 +16,14 @@ def parse(line):
 
 def input():
 	if len(sys.argv) < 4:
-		print "Usage ./eval model data_dir opt"
+		print "Usage ./eval model_list data_dir opt"
 		print "opt : {model, data}"
 		sys.exit()
 	return sys.argv[1], sys.argv[2], sys.argv[3]
 
 model_path, data_dir, opt = input()
-model_home = model_path[:model_path.rfind("/")]
+
+model_home = model_path.split('.')[0] + "_out";
 pos_val = '{}_val_pos.txt'.format(data_dir)
 neg_val = '{}_val_bg.txt'.format(data_dir)
 
@@ -31,10 +32,11 @@ good_path = path.join(model_home, 'good')
 mid_path = path.join(model_home, 'mid')
 bad_path = path.join(model_home, 'bad')
 
-os.popen("rm -rf {0}; mkdir {0}".format(none_path))
-os.popen("rm -rf {0}; mkdir {0}".format(good_path))
-os.popen("rm -rf {0}; mkdir {0}".format(mid_path))
-os.popen("rm -rf {0}; mkdir {0}".format(bad_path))
+os.popen("rm -rf {0}; mkdir {0}".format(model_home))
+os.popen("mkdir {0}".format(none_path))
+os.popen("mkdir {0}".format(good_path))
+os.popen("mkdir {0}".format(mid_path))
+os.popen("mkdir {0}".format(bad_path))
 
 lc = []
 rc = []

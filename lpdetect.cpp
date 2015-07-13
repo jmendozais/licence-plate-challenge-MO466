@@ -50,11 +50,11 @@ int main(int argc, char* argv[]) {
 	string result, model_path;
 
     if (argc < 2) 
-        cout << "Usage: ./lpdetect img_path [model_path]" << endl;
+        cout << "Usage: ./lpdetect img_path [model_list]" << endl;
 	if (argc > 2)
 		model_path = argv[2];
 	else 
-		model_path = "models/latest/cascade.xml";
+		model_path = "models.txt";
 
     img = imread(argv[1], 1),
     scaled_img = scale(img, factor_img);

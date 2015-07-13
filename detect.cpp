@@ -1,5 +1,6 @@
 #include "detect.h"
 #include "mocv_lpr.h"
+#include <fstream>
 
 using namespace std;
 using namespace cv;
@@ -87,24 +88,37 @@ vector<RotatedRect> extract(Mat img, vector<Rect> plates) {
     return extracted_plates;
 }
 
-vector<RotatedRect> detect(Mat img, String model_name) {
-    CascadeClassifier plate_cascade;
+vector<RotatedRect> detect(Mat img, String models_path) {
+    vector<CascadeClassifier> models;
     Mat img_gray;
     vector<Rect> plates;
 	int size;
-    
-    // Load detector
-    if (!plate_cascade.load(model_name)) {
-        cout << "error loading model" << endl;
-    }
+	string line;
+	
+	// Get detectors path
+	ifstream fin(models_path.c_str());
 
+	// Load models
+	while(fin >> line) {
+		CascadeClassifier model;
+    	if (!model.load(line)) {
+        	cerr << "error loading model" << endl;
+    	} else 
+			models.push_back(model);	
+	}
+    
     // Preprocess image
     cvtColor(img, img_gray, COLOR_BGR2GRAY);
     //equalizeHist( img_gray, img_gray );
 
     // Detect plates
-    plate_cascade.detectMultiScale(img_gray, plates, 1.1, 2, 0|CASCADE_SCALE_IMAGE );
-	cerr << "# plates detected: " << plates.size() << endl;
+
+	for (int i = 0; i < models.size(); ++ i) {
+		vector<Rect> tmp;
+    	models[i].detectMultiScale(img_gray, tmp, 1.1, 2, 0|CASCADE_SCALE_IMAGE );
+		plates.insert(plates.end(), tmp.begin(), tmp.end());
+		cerr << "# plates detected: " << plates.size() << endl;
+	}
 
 	if (plates.size() == 0)
 		return vector<RotatedRect>();
