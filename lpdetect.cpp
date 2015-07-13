@@ -80,29 +80,16 @@ int main(int argc, char* argv[]) {
     // Preprocess
     Mat preproc = preprocess(resized_roi);
 
-	//cout << "Segment preproc..." << endl;
     // Segment
     vector<Rect> digits = segment(preproc);
-	//show_result(resized_roi, digits);
-	//waitKey();
 
     // Write to file
     //write_digits_to_file(digits, preproc, "test_segment");
 
-	//cout << "Recognizing chars" << endl;
+	// cout << "Recognizing chars" << endl;
 	// Recognize
 
-	int k;
-	KNearest knn = read_knn("ocr.xml", k);
-	Mat character, feats;
-	for (int i = 0; i < digits.size(); ++ i) {
-		// digits with side < 4 cause segfault
-		if (digits[i].width < 4 || digits[i].height < 4 )
-			continue;
-		character = preproc(digits[i]);
-		feats = features(normalize(character));
-		result += (char)knn.find_nearest(feats, k);
-	}
+	result = recognize(digits, preproc);
 
 	plates[0].points(pts);
 

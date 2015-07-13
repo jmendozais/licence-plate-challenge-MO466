@@ -44,7 +44,6 @@ void read_set(char list_path[], vector<string> &img_paths, Mat &responses) {
 	Mat img;
 
 	while (ftrain >> line) {
-		cout << "img: " << line << endl;
 		img = imread(line, 1);
 
 		// filtering imgs with area 0
@@ -92,10 +91,38 @@ Mat normalize(Mat img) {
 	return centered(Rect(11, 11, 28, 28));
 }
 
+Mat deskew(Mat img) {
+	Mat skewed;
+	Moments m;
+	float skew;
+
+	// calculate skew
+	m = moments(img, false);
+	if (abs(m.mu02) < 1e-2)
+		return img;
+	skew = m.mu11 * 1.0 / m.mu02;
+
+	// create affine transform matrix
+	//[[1, skew, -0.5*SZ*skew], [0, 1, 0]]
+	float aff_[2][3] = {{1, skew, -0.5 * img.rows * skew}, {0, 1, 0}};
+	Mat aff(2, 3, CV_32FC1);
+	for (int i = 0; i < 2; ++ i) 
+		for (int j = 0; j < 3; ++ j)
+			aff.at<float>(i,j) = aff_[i][j];
+
+	// apply affine transform
+	warpAffine(img, skewed, aff, img.size(), WARP_INVERSE_MAP | INTER_CUBIC);	
+
+	return skewed;
+}
+
 Mat features(Mat img) {
-	Mat result, resultf;
+	Mat result, resultf, normalized, deskewed;
+
+	normalized = normalize(img);	
+	deskewed = deskew(normalized);	
 	
-	result = img.clone();
+	result = deskewed.clone();
 	result = result.reshape(0, 1);
 	result.convertTo(resultf, CV_32FC1);
 
@@ -103,22 +130,20 @@ Mat features(Mat img) {
 }
 
 Mat features_from_paths(vector<string> img_paths) {
-	Mat img, normalized;
-	Mat x, float_x;
+	Mat img;
+	Mat x;
 
 	for (int i = 0; i < img_paths.size(); ++ i) {
 		img = imread(img_paths[i], 1);
-		normalized = normalize(img);	
 		/*
 		Mat output;
 		resize(255 - normalized, output,  Size(100, 100), 0, 0, INTER_CUBIC);
 		imwrite(img_paths[i] + ".jpg", output);
 		*/
-		x.push_back(features(normalized));	
+		x.push_back(features(img));	
 	}
 	
-	x.convertTo(float_x, CV_32F);
-	return float_x;
+	return x;
 }
 
 KNearest read_knn(string fname, int &k) {
@@ -139,6 +164,52 @@ void write_knn(string fname, Mat x, Mat y, int k) {
 	fout << "y" << y;
 	fout << "k" << k;
 }
+
+string recognize_with_knn(vector<Rect> rois, Mat plate) {
+	int k;
+    KNearest knn = read_knn("ocr.xml", k);
+    Mat character, feats;
+	string result;
+
+    for (int i = 0; i < rois.size(); ++ i) {
+        // rois with side < 4 cause segfault
+        if (rois[i].width < 4 || rois[i].height < 4 )
+            continue;
+        character = plate(rois[i]);
+        feats = features(character);
+        result += (char)knn.find_nearest(feats, k);
+    }
+
+	return result;
+}
+
+string recognize(vector<Rect> rois, Mat plate) {
+	CvSVM svm;
+    Mat character, feats;
+	string result;
+
+	svm.load("ocr_svm.xml");
+
+    for (int i = 0; i < rois.size(); ++ i) {
+        // rois with side < 4 cause segfault
+        if (rois[i].width < 4 || rois[i].height < 4 )
+            continue;
+		
+		// extract character region
+        character = plate(rois[i]);
+        feats = features(character);
+		
+		// scale features to -1, 1 for SVM
+		feats /= 128;
+		feats -= 1;
+
+        result += (char)svm.predict(feats);
+    }
+
+	return result;
+}
+
+
 
 double evaluate(Mat real, Mat pred) {
 	assert(real.rows == pred.rows);
