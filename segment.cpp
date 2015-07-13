@@ -135,13 +135,15 @@ vector<Rect> segment(Mat preproc){
         }
         //}
     }
+	if (characters.size() < 7) 
+		return characters;
 
     // Remove smallest rectangles and those with wrong height
     sort(characters.begin(), characters.end(), cmp_area);
 
     // If the difference to one's height compared to the 7 first is too much, discard
     double minh = 1234567;
-    int idx, idx2;
+    int idx, idx2 = 0;
     for(int i = 0; i < 7; ++i){
         if(characters[i].height < minh){
             minh = characters[i].height;
@@ -189,7 +191,7 @@ void show_result(Mat orig, vector<Rect> digits){
     imshow("Contours", orig);
 }
 
-
+/*
 int main( int argc, char** argv ){
     // Load an license-plate image
     Mat orig = imread( argv[1], 1 );
@@ -218,4 +220,4 @@ int main( int argc, char** argv ){
             break;
     }
 }
-
+*/
