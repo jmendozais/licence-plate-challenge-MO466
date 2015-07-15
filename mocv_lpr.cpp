@@ -193,6 +193,10 @@ vector<Plate> DetectRegions::segment(Mat input){
             Point seed;
             seed.x=rects[i].center.x+rand()%(int)minSize-(minSize/2);
             seed.y=rects[i].center.y+rand()%(int)minSize-(minSize/2);
+			seed.x = max(seed.x, 0);
+			seed.y = max(seed.y, 0);
+			//if(seed.x < 0 || seed.x >= input.rows || seed.y < 0 || seed.y >= input.cols ) continue;
+			if(seed.x < seed.y) 
             circle(result, seed, 1, Scalar(0,255,255), -1);
             int area = floodFill(input, mask, seed, Scalar(255,0,0), &ccomp, Scalar(loDiff, loDiff, loDiff), Scalar(upDiff, upDiff, upDiff), flags);
         }
