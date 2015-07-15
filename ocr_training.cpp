@@ -42,9 +42,9 @@ void train_svm(Mat tr_x, Mat tr_y, Mat te_x, Mat te_y) {
 	Mat pred, x, y;
 	int exps[8] = {-4, -3, -2, -1, 0, 1, 2, 3};
 	double C, gamma, best_C, best_gamma, best_acc, acc;
-	for (int i = 0; i < 8; ++ i) {
+	for (int i = 1; i < 12; ++ i) {
 		for (int j = 0; j < 8; ++ j) {
-			C = pow(2, exps[i]);
+			C = i;
 			gamma = pow(10, exps[j]);
 			pred = Mat();
 
