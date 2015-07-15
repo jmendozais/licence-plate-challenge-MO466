@@ -62,23 +62,15 @@ int main(int argc, char* argv[]) {
 		Size dsize = img.size();
 		factor = max(dsize.width, dsize.height) * 1.0 / major_side;
 		dsize.width = round(dsize.width/factor);
-		dsize.height = round(dsize.width/factor);
+		dsize.height = round(dsize.height/factor);
 
 		// Write the image
 		Mat rimg(dsize.width, dsize.height, CV_64F);
 		resize(img, rimg, dsize);
 		imwrite(scaled_img_path, rimg);
-
-		if (debug) {
-			Mat tmp = rimg.clone();
-			if (isPositive)
-				rectangle(tmp, Point(pts[0], pts[1]), Point(pts[0]+pts[2], pts[1]+pts[3]), Scalar(0, 0, 255), 3);
-			namedWindow("LPR");
-			imshow("LPR", tmp);
-			waitKey();
-		}
-		
+	
 		// Write annotation
+		cout << "img_path " << img_path << endl;
 		cout << "ann_path " << ann_path << endl;
 		ifstream fin1(ann_path);
 		ofstream fout1(scaled_ann_path);
@@ -125,6 +117,16 @@ int main(int argc, char* argv[]) {
 		}
 		fout << endl;
 		cout << endl;
+
+		if (debug) {
+			Mat tmp = rimg.clone();
+			if (isPositive)
+				rectangle(tmp, Point(pts[0], pts[1]), Point(pts[0]+pts[2], pts[1]+pts[3]), Scalar(0, 0, 255), 3);
+			namedWindow("LPR");
+			imshow("LPR", tmp);
+			waitKey();
+		}
+	
 	}
 	return 0;
 }
