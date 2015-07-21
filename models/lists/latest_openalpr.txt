@@ -1,0 +1,3 @@
+models/latest/cascade.xml
+models/openalpr/eu.xml	
+models/openalpr/us.xml
