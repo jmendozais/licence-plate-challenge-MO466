@@ -31,8 +31,10 @@ pack: mocv_lpr.cpp detect.cpp segment.cpp recognize.cpp lpdetect.cpp ocr_trainin
 	cp *.cpp lpr/
 	cp *.h lpr/
 	mkdir lpr/models
-	cp -rf models/latest lpr/models
-	cp ocr.xml lpr/
+	mkdir lpr/models/latest
+	cp models/latest/cascade.xml lpr/models/cascade.xml
+	cp models/latest.txt lpr/models/latest.txt
+	cp ocr_svm.xml lpr/
 	cp makefile lpr/
 
 clean:

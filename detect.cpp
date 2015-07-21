@@ -1,19 +1,31 @@
 #include "detect.h"
-#include "mocv_lpr.h"
+
+#include "opencv2/video/video.hpp"
+#include "opencv2/objdetect/objdetect.hpp"
+#include "opencv2/imgproc/imgproc.hpp"
+
+#include <cstdio>
+#include <cstdlib>
+#include <iostream>
 #include <fstream>
+#include <string>
+#include <vector>
+#include <algorithm>
+
+#include "mocv_lpr.h"
 
 using namespace std;
 using namespace cv;
 
-Mat scale(Mat img, double& factor) {
+Mat scale(Mat img, double* factor) {
     Mat scaled_img;
     Size dsize;
     int major_side = 640;
 
     // Scale image such as max(width, height) == major_side
 	dsize = img.size();
-    factor = max(dsize.width, dsize.height) * 1.0 / major_side; 
-    resize(img, scaled_img, Size(0,0), 1.0/factor, 1.0/factor, CV_INTER_CUBIC);
+    (*factor) = max(dsize.width, dsize.height) * 1.0 / major_side;
+    resize(img, scaled_img, Size(0,0), 1.0/(*factor), 1.0/(*factor), CV_INTER_CUBIC);
 
     return scaled_img;
 }
@@ -48,21 +60,22 @@ vector<RotatedRect> extract(Mat img, vector<Rect> plates) {
     vector<Plate> extractions;
     Rect roi;
 	RotatedRect rot_rect;
-	Point2f center; 
+	Point2f center;
 	Size2f size;
     Mat plate_region;
     DetectRegions detectRegions;
     detectRegions.setFilename("filenamewithoutext");
-    detectRegions.saveRegions=false;
-    detectRegions.showSteps=false;
+    detectRegions.saveRegions = false;
+    detectRegions.showSteps = false;
 
     for (int i = 0; i < plates.size(); ++ i) {
-
         // Add margin to the detected plate region
         tl.x = max(0, (int)(plates[i].x - plates[i].width * margin));
         tl.y = max(0, (int)(plates[i].y - plates[i].height * margin));
-        br.x = min(img.size().width, (int)(plates[i].x + plates[i].width *(1 + margin)));
-        br.y = min(img.size().height, (int)(plates[i].y + plates[i].height * (1 + margin)));
+        br.x = min(img.size().width, (int)(plates[i].x + plates[i].width * \
+		(1 + margin)));
+        br.y = min(img.size().height, (int)(plates[i].y + plates[i].height * \
+		(1 + margin)));
 
         // Crop plate region
         plate_region = img(Rect(tl, br));
@@ -70,18 +83,13 @@ vector<RotatedRect> extract(Mat img, vector<Rect> plates) {
         // Extract plate(s)
         extractions  = detectRegions.run(plate_region);
         for(int j = 0; j < extractions.size(); ++j) {
-
-            // Save the first extraction
-            if(j == 0 && i == 0) 
-                imwrite("extraction_0_0.jpg", extractions[j].plateImg);
-
 			// Translate to the image coordinates
 			rot_rect = extractions[j].rotRect;
-			rot_rect.center.x = rot_rect.center.x + max(0.0, plates[i].x - margin * plates[i].width);
-			rot_rect.center.y = rot_rect.center.y + max(0.0, plates[i].y - margin * plates[i].height);
+			rot_rect.center.x = rot_rect.center.x + max(0.0, plates[i].x - \
+			margin * plates[i].width);
+			rot_rect.center.y = rot_rect.center.y + max(0.0, plates[i].y - \
+			margin * plates[i].height);
             extracted_plates.push_back(rot_rect);
-
-            //extracted_plates.push_back(Rect(plates[i].x + roi.x - margin * plates[i].width, plates[i].y + roi.y - margin * plates[i].height, roi.br().x - roi.tl().x, roi.br().y - roi.tl().y));
         }
     }
 
@@ -94,30 +102,28 @@ vector<RotatedRect> detect(Mat img, String models_path) {
     vector<Rect> plates;
 	int size;
 	string line;
-	
+
 	// Get detectors path
 	ifstream fin(models_path.c_str());
 
 	// Load models
 	while(fin >> line) {
 		CascadeClassifier model;
-    	if (!model.load(line)) {
+    	if (!model.load(line))
         	cerr << "error loading model" << endl;
-    	} else 
-			models.push_back(model);	
+    	else
+			models.push_back(model);
 	}
-    
+
     // Preprocess image
+	// TODO: to hsv, hist eq
     cvtColor(img, img_gray, COLOR_BGR2GRAY);
-    //equalizeHist( img_gray, img_gray );
 
     // Detect plates
-
 	for (int i = 0; i < models.size(); ++ i) {
 		vector<Rect> tmp;
-    	models[i].detectMultiScale(img_gray, tmp, 1.1, 2, 0|CASCADE_SCALE_IMAGE );
+    	models[i].detectMultiScale(img_gray, tmp, 1.1, 2, 0|CASCADE_SCALE_IMAGE);
 		plates.insert(plates.end(), tmp.begin(), tmp.end());
-		cerr << "# plates detected: " << plates.size() << endl;
 	}
 
 	if (plates.size() == 0)
@@ -127,19 +133,17 @@ vector<RotatedRect> detect(Mat img, String models_path) {
 	size = plates.size();
     for (int i = 0; i < size; ++ i)
         plates.push_back(Rect(plates[i]));
-
-    // groupRectangles(plates, 1, 0.2);
     groupRectangles(plates, 1, 0.3);
 
-    // Mastering OpenCV plate extraction 
-    return extract(img, plates); 
+    // Extraction
+    return extract(img, plates);
 }
 
 void write_plates_to_file(Mat img, vector<Rect> plates, char name[]) {
     Mat roi, resized_roi;
-	double factor;	
+	double factor;
     char s[1234];
-	
+
     for (int i = 0; i < plates.size(); i++) {
         sprintf(s, "%s_%d.jpg", name, i);
         roi = img(plates[i]);
@@ -157,6 +161,7 @@ void show_detect_result(Mat img, vector<Rect> plates) {
 		rect = plates[i];
         rectangle(img, rect.tl(), rect.br(), color, 2, 8, 0);
     }
+
     imshow("detect", img);
 }
 

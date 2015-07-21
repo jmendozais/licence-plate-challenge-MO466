@@ -1,44 +1,21 @@
+#include "recognize.h"
+
+#include "opencv2/highgui/highgui.hpp"
+#include "opencv2/imgproc/imgproc.hpp"
+#include "opencv2/ml/ml.hpp"
+
 #include <iostream>
 #include <vector>
 #include <string>
 #include <algorithm>
 #include <fstream>
+
 #include "mocv_lpr.h"
 
 using namespace std;
 using namespace cv;
 
-char recognize_char(Mat char_img) {
-	Mat img_gray, rz_img;
-
-    OCR ocr("OCR.xml");    
-    ocr.saveSegments=true;
-    ocr.DEBUG=false;
-    ocr.filename="ocr_filenamewithoutext";
-	//cvtColor(char_img, img_gray, CV_BGR2GRAY);
-	img_gray = 255 - char_img;
-
-    return ocr.run_on_char(img_gray);
-}
-
-string recognize_plate(Mat plate_img) {
-	Mat plate_gray;
-	Plate plate;
-
-    OCR ocr("OCR.xml");    
-    ocr.saveSegments=true;
-    ocr.DEBUG=false;
-    ocr.filename="ocr_filenamewithoutext";
-	cvtColor(plate_img, plate_gray, CV_BGR2GRAY);
-	plate_gray.convertTo(plate_gray, CV_8UC1);
-	imshow("converted", plate_gray);
-	waitKey();
-
-	plate.plateImg = plate_gray;
-    return ocr.run(&plate);
-}
-
-void read_set(char list_path[], vector<string> &img_paths, Mat &responses) {
+void read_set(char list_path[], vector<string> *img_paths, Mat *responses) {
 	string line, ann_path, ann;
 	ifstream ftrain(list_path);
 	Mat img;
@@ -46,19 +23,20 @@ void read_set(char list_path[], vector<string> &img_paths, Mat &responses) {
 	while (ftrain >> line) {
 		img = imread(line, 1);
 
-		// filtering imgs with area 0
+		// filter imgs with area 0
 		if (img.size().width == 0 || img.size().height == 0)
 			continue;
 
+		// read annotation
 		ann_path = line.substr(0, line.size() - 3);
 		ann_path += "txt";
 		ifstream fin(ann_path.c_str());
 		fin >> ann;
-		if (ann.size() == 0) 
+		if (ann.size() == 0)
 			continue;
 
-		img_paths.push_back(line);
-		responses.push_back((int) ann[0]);
+		(*img_paths).push_back(line);
+		(*responses).push_back((int) ann[0]);
 	}
 }
 
@@ -69,6 +47,7 @@ Mat normalize(Mat img) {
 	Size size;
 	double factor;
 
+	// convert to gray scale
 	if (img.channels() == 3)
 		cvtColor(img, gray, CV_BGR2GRAY);
 	else
@@ -76,18 +55,19 @@ Mat normalize(Mat img) {
 	gray.convertTo(gray, CV_8UC1);
 	gray = 255 - gray;
 
+	// normalize by translating the image to its center of mass
 	size = gray.size();
 	factor = max(size.width, size.height) * 1.0 / 20;
-	resize(gray, resized, Size(0,0), 1.0/factor, 1.0/factor, INTER_CUBIC);
-
+	resize(gray, resized, Size(0, 0), 1.0/factor, 1.0/factor, INTER_CUBIC);
 	m = moments(resized, false);
-	cmass = Point(round(m.m10/m.m00), round(m.m01/m.m00));	
+	cmass = Point(round(m.m10/m.m00), round(m.m01/m.m00));
 
-	centered = Mat(50,50,CV_8UC1, Scalar(0));
+	// crop
+	centered = Mat(50, 50, CV_8UC1, Scalar(0));
 	offset = Point(25 - cmass.x, 25 - cmass.y);
 	roi = centered(Rect(offset, resized.size()));
 	resized.copyTo(roi);
-	
+
 	return centered(Rect(11, 11, 28, 28));
 }
 
@@ -103,15 +83,14 @@ Mat deskew(Mat img) {
 	skew = m.mu11 * 1.0 / m.mu02;
 
 	// create affine transform matrix
-	//[[1, skew, -0.5*SZ*skew], [0, 1, 0]]
 	float aff_[2][3] = {{1, skew, -0.5 * img.rows * skew}, {0, 1, 0}};
 	Mat aff(2, 3, CV_32FC1);
-	for (int i = 0; i < 2; ++ i) 
+	for (int i = 0; i < 2; ++ i)
 		for (int j = 0; j < 3; ++ j)
-			aff.at<float>(i,j) = aff_[i][j];
+			aff.at<float>(i, j) = aff_[i][j];
 
 	// apply affine transform
-	warpAffine(img, skewed, aff, img.size(), WARP_INVERSE_MAP | INTER_CUBIC);	
+	warpAffine(img, skewed, aff, img.size(), WARP_INVERSE_MAP | INTER_CUBIC);
 
 	return skewed;
 }
@@ -119,9 +98,11 @@ Mat deskew(Mat img) {
 Mat features(Mat img) {
 	Mat result, resultf, normalized, deskewed;
 
-	normalized = normalize(img);	
-	deskewed = deskew(normalized);	
-	
+	// normalize and deskew char by its principal axis
+	normalized = normalize(img);
+	deskewed = deskew(normalized);
+
+	// convert result to 1D array
 	result = deskewed.clone();
 	result = result.reshape(0, 1);
 	result.convertTo(resultf, CV_32FC1);
@@ -140,21 +121,22 @@ Mat features_from_paths(vector<string> img_paths) {
 		resize(255 - normalized, output,  Size(100, 100), 0, 0, INTER_CUBIC);
 		imwrite(img_paths[i] + ".jpg", output);
 		*/
-		x.push_back(features(img));	
+		x.push_back(features(img));
 	}
-	
+
 	return x;
 }
 
-KNearest read_knn(string fname, int &k) {
+KNearest read_knn(string fname, int *k) {
 	Mat x, y;
 
 	FileStorage fin(fname, FileStorage::READ);
 	fin["x"] >> x;
 	fin["y"] >> y;
-	fin["k"] >> k;
-	
-	KNearest knn(x, y, cv::Mat(), false, k);	
+	fin["k"] >> *k;
+
+	KNearest knn(x, y, cv::Mat(), false, *k);
+
 	return knn;
 }
 
@@ -167,7 +149,7 @@ void write_knn(string fname, Mat x, Mat y, int k) {
 
 string recognize_with_knn(vector<Rect> rois, Mat plate) {
 	int k;
-    KNearest knn = read_knn("ocr.xml", k);
+    KNearest knn = read_knn("ocr.xml", &k);
     Mat character, feats;
 	string result;
 
@@ -175,8 +157,12 @@ string recognize_with_knn(vector<Rect> rois, Mat plate) {
         // rois with side < 4 cause segfault
         if (rois[i].width < 4 || rois[i].height < 4 )
             continue;
+
         character = plate(rois[i]);
+
         feats = features(character);
+
+		// predict character
         result += (char)knn.find_nearest(feats, k);
     }
 
@@ -194,11 +180,12 @@ string recognize(vector<Rect> rois, Mat plate) {
         // rois with side < 4 cause segfault
         if (rois[i].width < 4 || rois[i].height < 4 )
             continue;
-		
+
 		// extract character region
         character = plate(rois[i]);
+
         feats = features(character);
-		
+
 		// scale features to -1, 1 for SVM
 		feats /= 128;
 		feats -= 1;
@@ -209,12 +196,11 @@ string recognize(vector<Rect> rois, Mat plate) {
 	return result;
 }
 
-
-
 double evaluate(Mat real, Mat pred) {
 	assert(real.rows == pred.rows);
+
 	int *ireal;
-	float *fpred;	
+	float *fpred;
 	double acc;
 
 	ireal = real.ptr<int>(0);
